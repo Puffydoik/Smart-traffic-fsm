@@ -1,6 +1,6 @@
 # 🚦 Smart Traffic Light Controller
 
-> **Live demo:** _coming soon via GitHub Pages_
+> **Live demo:** [https://puffydoik.github.io/Smart-traffic-fsm/](https://puffydoik.github.io/Smart-traffic-fsm/)
 
 A fully interactive **Traffic Light Controller** built on a real **Finite State Machine (FSM)**. Simulates a four-way road intersection with normal traffic flow, pedestrian crossings, and emergency vehicle priority — all running in your browser with zero dependencies.
 
@@ -26,8 +26,8 @@ A fully interactive **Traffic Light Controller** built on a real **Finite State 
 
 ```bash
 # Clone the repo
-git clone https://github.com/Puffydoik/smart-traffic-fsm.git
-cd smart-traffic-fsm
+git clone https://github.com/Puffydoik/Smart-traffic-fsm.git
+cd Smart-traffic-fsm
 
 # Open in browser (no build step needed)
 start index.html        # Windows
@@ -35,7 +35,7 @@ open index.html         # macOS
 xdg-open index.html     # Linux
 ```
 
-Or just **[visit the live site](#)** hosted on GitHub Pages.
+Or just **[visit the live site](https://puffydoik.github.io/Smart-traffic-fsm/)** hosted on GitHub Pages.
 
 ---
 
