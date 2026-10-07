@@ -1,0 +1,12 @@
+# Netlify configuration for Smart Traffic Light Controller
+# Pure static site – no build step needed
+
+[build]
+  publish = "."   # serve files from the root of this folder
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Cache-Control = "no-cache"

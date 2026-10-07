@@ -1,0 +1,540 @@
+/* ═══════════════════════════════════════════════════════════════
+   style.css  –  Smart Traffic Light Controller
+   Dark professional theme, responsive layout
+═══════════════════════════════════════════════════════════════ */
+
+/* ── CSS Custom Properties ── */
+:root {
+  --bg-base:        #0d1117;
+  --bg-card:        #161b22;
+  --bg-card2:       #1c2230;
+  --border:         #30363d;
+  --text-primary:   #e6edf3;
+  --text-secondary: #8b949e;
+  --accent-blue:    #58a6ff;
+  --accent-green:   #3fb950;
+  --accent-yellow:  #d29922;
+  --accent-red:     #f85149;
+  --accent-orange:  #e3731a;
+  --accent-purple:  #a371f7;
+  --accent-teal:    #2dd4bf;
+
+  /* Signal colours */
+  --sig-red:    #ff3b30;
+  --sig-yellow: #ffcc00;
+  --sig-green:  #34c759;
+  --sig-off:    #1a1a1a;
+
+  /* Dimensions */
+  --header-h:   64px;
+  --footer-h:   36px;
+  --radius:     12px;
+  --radius-sm:  8px;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Header ── */
+.app-header {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.header-icon { font-size: 2rem; }
+.app-header h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.app-header p {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  letter-spacing: .04em;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.clock-box {
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  color: var(--accent-blue);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  letter-spacing: .08em;
+}
+.sim-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #2d1010;
+  color: var(--accent-red);
+  border: 1px solid var(--accent-red);
+  transition: all .3s;
+}
+.sim-badge.running  { background:#0d2a1a; color:var(--accent-green);  border-color:var(--accent-green);  }
+.sim-badge.paused   { background:#2a2200; color:var(--accent-yellow); border-color:var(--accent-yellow); }
+
+/* ── Emergency Banner ── */
+.emergency-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #3b0000;
+  border-bottom: 2px solid var(--sig-red);
+  color: #ff6b6b;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 8px 20px;
+  animation: blink-bg 1s infinite;
+  letter-spacing: .04em;
+}
+@keyframes blink-bg {
+  0%, 100% { background: #3b0000; }
+  50%       { background: #5a0000; }
+}
+.em-icon { font-size: 1.3rem; }
+.em-icon.anim { animation: spin 2s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none !important; }
+
+/* ── Main Layout ── */
+.app-main {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  gap: 16px;
+  padding: 16px;
+  min-height: calc(100vh - var(--header-h) - var(--footer-h));
+  align-items: start;
+}
+
+/* ── Panel (sidebar) ── */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Card ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.card-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Buttons ── */
+.btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: opacity .15s, transform .1s;
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) { opacity: .85; transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+.btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.btn-green  { background: var(--accent-green);  color: #fff; }
+.btn-yellow { background: var(--accent-yellow); color: #000; }
+.btn-blue   { background: var(--accent-blue);   color: #000; }
+.btn-red    { background: var(--accent-red);    color: #fff; }
+.btn-orange { background: var(--accent-orange); color: #fff; }
+.btn-gray   { background: #444;                 color: #fff; }
+.btn-teal   { background: var(--accent-teal);   color: #000; }
+.btn-purple { background: var(--accent-purple); color: #fff; }
+.btn.full-width { width: 100%; }
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.mt-8  { margin-top: 8px; }
+
+/* ── Mode Toggle ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute;
+  inset: 0;
+  background: #30363d;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: .3s;
+}
+.slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: .3s;
+}
+input:checked + .slider { background: var(--accent-purple); }
+input:checked + .slider::before { transform: translateX(20px); }
+#modeLabel { min-width: 50px; color: var(--text-primary); font-weight: 600; }
+
+/* ── Speed Buttons ── */
+.speed-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.speed-btns { display: flex; gap: 6px; }
+.speed-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all .2s;
+}
+.speed-btn.active, .speed-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+  background: rgba(88,166,255,.1);
+}
+
+/* ── Pedestrian Status ── */
+.ped-status {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: center;
+  min-height: 18px;
+}
+
+/* ── Emergency Controls ── */
+.em-vehicle-selector, .em-direction-selector {
+  margin-bottom: 10px;
+}
+.em-vehicle-selector label,
+.em-direction-selector label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-primary) !important;
+  cursor: pointer;
+}
+.radio-group input[type="radio"] { accent-color: var(--accent-orange); }
+#emDirection {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+/* ── Timer Config ── */
+.timer-config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 12px;
+  align-items: center;
+}
+.timer-config-grid label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.cfg-input {
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+/* ── Center Column ── */
+.center-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Status Bar ── */
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+}
+.status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+}
+.status-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-secondary);
+}
+.status-value {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.status-value.accent   { color: var(--accent-blue); }
+.status-value.countdown {
+  font-size: 1.4rem;
+  color: var(--sig-yellow);
+  font-family: 'Courier New', monospace;
+}
+
+/* ── Intersection Canvas ── */
+.intersection-wrapper {
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  background: var(--bg-card2);
+}
+#intersectionCanvas {
+  border-radius: var(--radius-sm);
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Event Log ── */
+.event-log-card { padding: 12px 16px; }
+.event-log {
+  height: 120px;
+  overflow-y: auto;
+  font-size: 0.78rem;
+  font-family: 'Courier New', monospace;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.log-entry {
+  display: flex;
+  gap: 8px;
+}
+.log-time { color: var(--accent-blue); min-width: 56px; }
+.log-msg  { color: var(--text-secondary); }
+.log-msg.info  { color: var(--accent-green); }
+.log-msg.warn  { color: var(--accent-yellow); }
+.log-msg.error { color: var(--accent-red); }
+.log-msg.em    { color: var(--accent-orange); }
+
+
+
+
+/* ── Stats Grid ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat-box {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-num {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent-blue);
+}
+.stat-lbl {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ── State History ── */
+.state-history {
+  max-height: 160px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sh-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-base);
+}
+.sh-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sh-name { color: var(--text-primary); flex: 1; }
+.sh-time { color: var(--text-secondary); font-size: 0.7rem; }
+
+/* ── Footer ── */
+.app-footer {
+  height: var(--footer-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  background: var(--bg-card);
+  letter-spacing: .04em;
+}
+
+/* ── FSM Bottom Section ── */
+.fsm-bottom-section {
+  padding: 0 16px 16px;
+}
+.fsm-bottom-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px 12px;
+}
+.fsm-bottom-inner {
+  width: 100%;
+  overflow-x: auto;          /* allow horizontal scroll on tiny screens */
+  padding: 8px 0;
+}
+#fsmSvg {
+  display: block;
+  width: 100%;
+  min-width: 700px;          /* keeps diagram readable even when squished */
+  height: auto;
+}
+.fsm-legend-hint {
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.fsm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.fsm-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.leg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .app-main {
+    grid-template-columns: 260px 1fr;
+  }
+  .right-panel { display: none; }
+}
+@media (max-width: 720px) {
+  .app-main {
+    grid-template-columns: 1fr;
+  }
+  .panel { display: none; }
+  .center-col { display: flex; }
+}
+

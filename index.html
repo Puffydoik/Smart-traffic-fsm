@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Traffic Light Controller – FSM Simulation</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════════ -->
+<header class="app-header">
+  <div class="header-left">
+    <span class="header-icon">🚦</span>
+    <div>
+      <h1>Smart Traffic Light Controller</h1>
+      <p>Finite State Machine Simulation</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="clock-box" id="clockBox">22:09:04</div>
+    <div class="sim-badge" id="simBadge">● STOPPED</div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     EMERGENCY ALERT BANNER
+═══════════════════════════════════════════════════════════ -->
+<div class="emergency-banner hidden" id="emergencyBanner">
+  <span class="em-icon">🚨</span>
+  <span id="emergencyBannerText">EMERGENCY PRIORITY ACTIVE – Ambulance on Main Road</span>
+  <span class="em-icon anim">🚨</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN LAYOUT
+═══════════════════════════════════════════════════════════ -->
+<main class="app-main">
+
+  <!-- ── LEFT COLUMN: Controls ── -->
+  <aside class="panel controls-panel">
+
+    <!-- Simulation Controls -->
+    <section class="card" id="simControlCard">
+      <h2 class="card-title">⚙️ Simulation Controls</h2>
+
+      <div class="btn-group">
+        <button class="btn btn-green"  id="btnStart">▶ Start</button>
+        <button class="btn btn-yellow" id="btnPause" disabled>⏸ Pause</button>
+        <button class="btn btn-blue"   id="btnResume" disabled>▷ Resume</button>
+        <button class="btn btn-red"    id="btnReset">↺ Reset</button>
+      </div>
+
+      <div class="toggle-row">
+        <span>Mode:</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="modeToggle" />
+          <span class="slider"></span>
+        </label>
+        <span id="modeLabel">Auto</span>
+      </div>
+
+      <div class="speed-row">
+        <span>Speed:</span>
+        <div class="speed-btns">
+          <button class="speed-btn active" data-speed="1">1×</button>
+          <button class="speed-btn" data-speed="2">2×</button>
+          <button class="speed-btn" data-speed="5">5×</button>
+        </div>
+      </div>
+
+      <!-- Manual advance (shown in Manual mode) -->
+      <button class="btn btn-purple hidden" id="btnManualNext">⏭ Next State</button>
+    </section>
+
+    <!-- Pedestrian Request -->
+    <section class="card" id="pedCard">
+      <h2 class="card-title">🚶 Pedestrian Crossing</h2>
+      <button class="btn btn-teal full-width" id="btnPedRequest">
+        🔔 Request Pedestrian Crossing
+      </button>
+      <div class="ped-status" id="pedStatus">No request pending</div>
+    </section>
+
+    <!-- Emergency Control -->
+    <section class="card" id="emergencyCard">
+      <h2 class="card-title">🚨 Emergency Control</h2>
+
+      <div class="em-vehicle-selector">
+        <label>Vehicle Type:</label>
+        <div class="radio-group">
+          <label><input type="radio" name="emVehicle" value="Ambulance" checked /> 🚑 Ambulance</label>
+          <label><input type="radio" name="emVehicle" value="Fire Truck" /> 🚒 Fire Truck</label>
+          <label><input type="radio" name="emVehicle" value="Police"     /> 🚓 Police</label>
+        </div>
+      </div>
+
+      <div class="em-direction-selector">
+        <label>Direction:</label>
+        <select id="emDirection">
+          <option value="main">Main Road</option>
+          <option value="side">Side Road</option>
+        </select>
+      </div>
+
+      <div class="btn-group mt-8">
+        <button class="btn btn-orange" id="btnTriggerEM">⚡ Trigger Emergency</button>
+        <button class="btn btn-gray"   id="btnClearEM" disabled>✔ Clear Emergency</button>
+      </div>
+    </section>
+
+    <!-- Timer Config -->
+    <section class="card" id="timerCard">
+      <h2 class="card-title">⏱ Timer Configuration</h2>
+      <div class="timer-config-grid">
+        <label>Green (s)</label>
+        <input type="number" id="cfgGreen"    value="10" min="3"  max="60" class="cfg-input" />
+        <label>Yellow (s)</label>
+        <input type="number" id="cfgYellow"   value="3"  min="2"  max="10" class="cfg-input" />
+        <label>All-Red (s)</label>
+        <input type="number" id="cfgAllRed"   value="2"  min="1"  max="10" class="cfg-input" />
+        <label>Pedestrian (s)</label>
+        <input type="number" id="cfgPed"      value="8"  min="3"  max="30" class="cfg-input" />
+        <label>Emergency (s)</label>
+        <input type="number" id="cfgEM"       value="12" min="5"  max="60" class="cfg-input" />
+      </div>
+      <button class="btn btn-blue full-width mt-8" id="btnApplyTimers">Apply Timers</button>
+    </section>
+
+  </aside>
+
+  <!-- ── CENTER COLUMN: Intersection + Status ── -->
+  <div class="center-col">
+
+    <!-- Status Bar -->
+    <div class="status-bar card">
+      <div class="status-item">
+        <span class="status-label">FSM State</span>
+        <span class="status-value accent" id="fsmStateName">—</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Phase Timer</span>
+        <span class="status-value countdown" id="phaseCountdown">—</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Main Road</span>
+        <span class="status-value" id="mainRoadSignal">—</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Side Road</span>
+        <span class="status-value" id="sideRoadSignal">—</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">Pedestrian</span>
+        <span class="status-value" id="pedSignalStatus">—</span>
+      </div>
+    </div>
+
+    <!-- Intersection Canvas -->
+    <div class="intersection-wrapper card">
+      <canvas id="intersectionCanvas" width="560" height="560"></canvas>
+    </div>
+
+    <!-- Event Log -->
+    <div class="card event-log-card">
+      <h2 class="card-title">📋 Event Log</h2>
+      <div class="event-log" id="eventLog"></div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT COLUMN: Stats + History ── -->
+  <aside class="panel right-panel">
+
+    <!-- Cycle Statistics -->
+    <section class="card">
+      <h2 class="card-title">📊 Cycle Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-num" id="statCycles">0</span>
+          <span class="stat-lbl">Cycles</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statPedCrossings">0</span>
+          <span class="stat-lbl">Ped Crossings</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statEmEvents">0</span>
+          <span class="stat-lbl">EM Events</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" id="statUptime">0s</span>
+          <span class="stat-lbl">Uptime</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- State History -->
+    <section class="card">
+      <h2 class="card-title">🕓 State History</h2>
+      <div class="state-history" id="stateHistory"></div>
+    </section>
+
+  </aside>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     FULL-WIDTH FSM STATE DIAGRAM (bottom of page)
+═══════════════════════════════════════════════════════════ -->
+<section class="fsm-bottom-section">
+  <div class="fsm-bottom-card">
+    <h2 class="card-title">🔄 FSM State Diagram &nbsp;<span class="fsm-legend-hint">— active state glows</span></h2>
+    <div class="fsm-bottom-inner">
+      <svg id="fsmSvg" viewBox="0 0 1060 240" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <!-- Legend row -->
+    <div class="fsm-legend">
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#3fb950"></span>S0 Main Green</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#d29922"></span>S1 Main Yellow</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#6e7681"></span>S6 All-Red Clear</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#58a6ff"></span>S2 Side Green</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#e3731a"></span>S3 Side Yellow</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#2dd4bf"></span>S4 Pedestrian</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#f85149"></span>S5 Emergency</span>
+    </div>
+  </div>
+</section>
+
+<footer class="app-footer">
+  Smart Traffic Light Controller &nbsp;|&nbsp; FSM Simulation &nbsp;|&nbsp; Built with Vanilla JS
+</footer>
+
+<script src="fsm.js"></script>
+<script src="renderer.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
