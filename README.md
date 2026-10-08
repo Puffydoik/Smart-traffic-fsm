@@ -10,12 +10,12 @@ A fully interactive **Traffic Light Controller** built on a real **Finite State 
 
 | Feature | Details |
 |---|---|
-| **FSM Engine** | 7 states: Main Green, Main Yellow, All-Red Clearance, Side Green, Side Yellow, Pedestrian, Emergency |
-| **Top-down Intersection** | Canvas-drawn 4-way road with 12 animated cars, zebra crossings, lane markings |
-| **Traffic Lights** | Full red / yellow / green with glow effects on all 4 corners |
-| **Pedestrian Crossing** | Request button → safe yellow/clearance → Walk signal + animated pedestrian walker |
-| **Emergency Priority** | Ambulance 🚑 / Fire Truck 🚒 / Police 🚓 — highest priority, safe transitions |
-| **FSM Diagram** | Full-width horizontal state diagram at the bottom, active state glows |
+| **FSM Engine** | 16-state cycle: Straight/Right, Left-Turn, All-Red Clearance, and Pedestrian phases for both directions, plus Emergency Priority |
+| **Multi-Lane Intersection** | Canvas-drawn 4-way road with dedicated inner Left-Turn lanes and outer Straight/Right lanes |
+| **Traffic Lights** | Complex signal clusters with independent Straight/Right and Left-Turn indicators |
+| **Pedestrian Crossing** | Permanent, automatic phases integrated directly into the FSM traffic cycle |
+| **Emergency Priority** | Ambulance 🚑 / Fire Truck 🚒 / Police 🚓 — safely interrupts FSM cycle and resumes afterward |
+| **FSM Diagram** | Full-width "snake" state diagram at the bottom, active state glows |
 | **Simulation Controls** | Start / Pause / Resume / Reset, Auto / Manual mode, 1× / 2× / 5× speed |
 | **Configurable Timers** | Green, Yellow, All-Red, Pedestrian, Emergency durations — live editable |
 | **Statistics & Log** | Cycle counter, pedestrian crossings, emergency events, uptime, event log |
@@ -54,12 +54,16 @@ smart-traffic-fsm/
 
 ## 🔄 FSM States
 
-```
-S0 (Main Green) → S1 (Main Yellow) → S6 (All-Red) → S2 (Side Green)
-→ S3 (Side Yellow) → S6 (All-Red) → S0  [normal cycle]
+The simulation follows a robust **16-state permanent cycle** to ensure complete safety:
 
-Pedestrian: any state → yellow → S6 → S4 (Walk) → S6 → resume
-Emergency:  any state → yellow → S6 → S5 (Priority) → S6 → resume
+```
+NS Straight/Right → Yellow → All-Red
+NS Left Turn → Yellow → All-Red
+Pedestrian Crossing → All-Red
+EW Straight/Right → Yellow → All-Red
+EW Left Turn → Yellow → All-Red
+Pedestrian Crossing → All-Red
+(Repeat)
 ```
 
 All transitions are **safety-guaranteed** — no conflicting greens ever occur simultaneously.
