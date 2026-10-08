@@ -1,38 +1,22 @@
 /* ═══════════════════════════════════════════════════════════════
    ui.js  –  UI Controller & FSM Visualiser
-   
-   Responsibilities:
-   • Instantiate TrafficFSM and IntersectionRenderer
-   • Wire all HTML controls to FSM actions
-   • Update all dashboard widgets on every FSM tick
-   • Draw the FSM state-diagram SVG
-   • Maintain the event log and state history list
-   • Manage the real-time clock
 ═══════════════════════════════════════════════════════════════ */
 
 'use strict';
 
-/* ─── DOM helpers ─── */
 const $  = id => document.getElementById(id);
 const $$ = sel => document.querySelectorAll(sel);
 
-/* ─── Instantiate core objects ─── */
 const fsm      = new TrafficFSM(onFsmTick);
 const renderer = new IntersectionRenderer('intersectionCanvas');
 renderer.start();
 
-/* ─── State colours (matches STATES in fsm.js) ─── */
 const STATE_COLORS = {
-  S0: '#3fb950', S1: '#d29922', S2: '#58a6ff',
-  S3: '#e3731a', S4: '#2dd4bf', S5: '#f85149', S6: '#6e7681',
+  S0: '#3fb950', S1: '#d29922', S2: '#6e7681', S3: '#58a6ff', S4: '#e3731a', S5: '#6e7681',
+  S6: '#2dd4bf', S7: '#6e7681', S8: '#3fb950', S9: '#d29922', S10: '#6e7681', S11: '#58a6ff',
+  S12: '#e3731a', S13: '#6e7681', S14: '#2dd4bf', S15: '#6e7681', S_EM: '#f85149'
 };
 
-/* ─── Statistics uptime tracker ─── */
-let _uptimeInterval = null;
-
-/* ═══════════════════════════════════════════════════════════════
-   FSM Tick Callback – called ~10×/sec by TrafficFSM
-═══════════════════════════════════════════════════════════════ */
 function onFsmTick(snap) {
   renderer.update(snap);
   updateStatusBar(snap);
@@ -40,33 +24,26 @@ function onFsmTick(snap) {
   updateStats(snap);
   updateStateHistory(snap);
   updateSimBadge(snap);
-  updatePedStatus(snap);
   updateEmergencyBanner(snap);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   STATUS BAR
-═══════════════════════════════════════════════════════════════ */
 function updateStatusBar(snap) {
   $('fsmStateName').textContent    = snap.running ? `${snap.state} – ${snap.stateName}` : '—';
   $('phaseCountdown').textContent  = snap.running ? `${Math.ceil(snap.remaining)}s`       : '—';
-  $('mainRoadSignal').textContent  = snap.running ? snap.mainSignal                        : '—';
-  $('sideRoadSignal').textContent  = snap.running ? snap.sideSignal                        : '—';
+  $('nsSRSignal').textContent  = snap.running ? snap.nsSR : '—';
+  $('nsLSignal').textContent   = snap.running ? snap.nsL  : '—';
+  $('ewSRSignal').textContent  = snap.running ? snap.ewSR : '—';
+  $('ewLSignal').textContent   = snap.running ? snap.ewL  : '—';
   $('pedSignalStatus').textContent = snap.running ? (snap.pedWalk ? '🟢 WALK' : '🔴 WAIT') : '—';
 
-  /* Colour the signal indicators */
   const sigColors = { RED:'#ff3b30', YELLOW:'#ffcc00', GREEN:'#34c759', OFF:'#8b949e' };
-  $('mainRoadSignal').style.color = sigColors[snap.mainSignal] || '#e6edf3';
-  $('sideRoadSignal').style.color = sigColors[snap.sideSignal] || '#e6edf3';
-
-  /* Countdown colour  */
-  const rem = snap.remaining;
-  $('phaseCountdown').style.color = rem <= 3 ? '#ff3b30' : '#d29922';
+  $('nsSRSignal').style.color = sigColors[snap.nsSR] || '#e6edf3';
+  $('nsLSignal').style.color  = sigColors[snap.nsL] || '#e6edf3';
+  $('ewSRSignal').style.color = sigColors[snap.ewSR] || '#e6edf3';
+  $('ewLSignal').style.color  = sigColors[snap.ewL] || '#e6edf3';
+  $('phaseCountdown').style.color = snap.remaining <= 3 ? '#ff3b30' : '#d29922';
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SIM BADGE
-═══════════════════════════════════════════════════════════════ */
 function updateSimBadge(snap) {
   const badge = $('simBadge');
   if (!snap.running) {
@@ -81,40 +58,17 @@ function updateSimBadge(snap) {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   PEDESTRIAN STATUS
-═══════════════════════════════════════════════════════════════ */
-function updatePedStatus(snap) {
-  const el = $('pedStatus');
-  if (snap.state === 'S4') {
-    el.textContent = `🚶 Crossing active – ${Math.ceil(snap.remaining)}s remaining`;
-    el.style.color = '#2dd4bf';
-  } else if (snap.pedRequested) {
-    el.textContent = '⏳ Request queued – will activate at next safe phase';
-    el.style.color = '#d29922';
-  } else {
-    el.textContent = 'No request pending';
-    el.style.color = '#8b949e';
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   EMERGENCY BANNER
-═══════════════════════════════════════════════════════════════ */
 function updateEmergencyBanner(snap) {
   const banner = $('emergencyBanner');
   if (snap.emActive) {
     banner.classList.remove('hidden');
     $('emergencyBannerText').textContent =
-      `EMERGENCY PRIORITY ACTIVE – ${snap.emVehicle} on ${snap.emDirection === 'main' ? 'Main Road' : 'Side Road'}`;
+      `EMERGENCY PRIORITY ACTIVE – ${snap.emVehicle} on ${snap.emDirection === 'main' ? 'North/South' : 'East/West'}`;
   } else {
     banner.classList.add('hidden');
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   STATISTICS
-═══════════════════════════════════════════════════════════════ */
 function updateStats(snap) {
   $('statCycles').textContent      = snap.stats.cycles;
   $('statPedCrossings').textContent = snap.stats.pedCrossings;
@@ -122,15 +76,10 @@ function updateStats(snap) {
   $('statUptime').textContent      = `${Math.floor(snap.stats.uptime)}s`;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   STATE HISTORY LIST
-═══════════════════════════════════════════════════════════════ */
 let _lastHistoryLen = 0;
-
 function updateStateHistory(snap) {
   if (snap.history.length === _lastHistoryLen) return;
   _lastHistoryLen = snap.history.length;
-
   const container = $('stateHistory');
   container.innerHTML = '';
   snap.history.forEach(h => {
@@ -152,39 +101,35 @@ function updateStateHistory(snap) {
   });
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   FSM STATE DIAGRAM (SVG)
-═══════════════════════════════════════════════════════════════ */
-
-/* Node layout — horizontal flow across 1060×240 viewBox
-   Normal cycle left→right: S0 → S1 → S6 → S2 → S3
-   Loop-back arrow from S3 back to S0 (below the row)
-   S4 (Pedestrian) branches below S6
-   S5 (Emergency) branches above S6
-*/
 const FSM_NODES = [
-  { id: 'S0', name: 'Main Green',    x:  90, y: 110, color: '#3fb950' },
-  { id: 'S1', name: 'Main Yellow',   x: 240, y: 110, color: '#d29922' },
-  { id: 'S6', name: 'All-Red Clear', x: 400, y: 110, color: '#6e7681' },
-  { id: 'S2', name: 'Side Green',    x: 560, y: 110, color: '#58a6ff' },
-  { id: 'S3', name: 'Side Yellow',   x: 720, y: 110, color: '#e3731a' },
-  { id: 'S4', name: 'Pedestrian',    x: 400, y: 205, color: '#2dd4bf' },
-  { id: 'S5', name: 'Emergency',     x: 920, y: 110, color: '#f85149' },
+  { id: 'S0', name: 'N/S S/R Green',    x:  70, y: 50, color: '#3fb950' },
+  { id: 'S1', name: 'N/S S/R Yellow',   x: 200, y: 50, color: '#d29922' },
+  { id: 'S2', name: 'All-Red',          x: 330, y: 50, color: '#6e7681' },
+  { id: 'S3', name: 'N/S Left Green',   x: 460, y: 50, color: '#58a6ff' },
+  { id: 'S4', name: 'N/S Left Yellow',  x: 590, y: 50, color: '#e3731a' },
+  { id: 'S5', name: 'All-Red',          x: 720, y: 50, color: '#6e7681' },
+  { id: 'S6', name: 'Ped Walk',         x: 850, y: 50, color: '#2dd4bf' },
+  { id: 'S7', name: 'All-Red',          x: 980, y: 50, color: '#6e7681' },
+
+  { id: 'S8', name: 'E/W S/R Green',    x: 980, y: 170, color: '#3fb950' },
+  { id: 'S9', name: 'E/W S/R Yellow',   x: 850, y: 170, color: '#d29922' },
+  { id: 'S10',name: 'All-Red',          x: 720, y: 170, color: '#6e7681' },
+  { id: 'S11',name: 'E/W Left Green',   x: 590, y: 170, color: '#58a6ff' },
+  { id: 'S12',name: 'E/W Left Yellow',  x: 460, y: 170, color: '#e3731a' },
+  { id: 'S13',name: 'All-Red',          x: 330, y: 170, color: '#6e7681' },
+  { id: 'S14',name: 'Ped Walk',         x: 200, y: 170, color: '#2dd4bf' },
+  { id: 'S15',name: 'All-Red',          x: 70, y: 170, color: '#6e7681' },
+  
+  { id: 'S_EM',name: 'Emergency',       x: 525, y: 110, color: '#f85149' }
 ];
 
-/* Edges — defined as { from, to, label, type }
-   type: 'straight' | 'loop-back' | 'branch-down' | 'branch-up' | 'side'
-*/
 const FSM_EDGES = [
-  { from:'S0', to:'S1', label:'Green expires',  type:'straight' },
-  { from:'S1', to:'S6', label:'Yellow expires', type:'straight' },
-  { from:'S6', to:'S2', label:'→ S2',           type:'straight' },
-  { from:'S2', to:'S3', label:'Green expires',  type:'straight' },
-  { from:'S3', to:'S0', label:'loop back → S0', type:'loop-back' },
-  { from:'S6', to:'S4', label:'Ped request',    type:'branch-down' },
-  { from:'S4', to:'S6', label:'Walk done',      type:'branch-down-ret' },
-  { from:'S3', to:'S5', label:'Emergency',      type:'side' },
-  { from:'S5', to:'S6', label:'EM cleared',     type:'side-ret' },
+  { from:'S0', to:'S1', label:'' }, { from:'S1', to:'S2', label:'' }, { from:'S2', to:'S3', label:'' },
+  { from:'S3', to:'S4', label:'' }, { from:'S4', to:'S5', label:'' }, { from:'S5', to:'S6', label:'' },
+  { from:'S6', to:'S7', label:'' }, { from:'S7', to:'S8', label:'' }, { from:'S8', to:'S9', label:'' },
+  { from:'S9', to:'S10', label:'' }, { from:'S10', to:'S11', label:'' }, { from:'S11', to:'S12', label:'' },
+  { from:'S12', to:'S13', label:'' }, { from:'S13', to:'S14', label:'' }, { from:'S14', to:'S15', label:'' },
+  { from:'S15', to:'S0', label:'' }
 ];
 
 let _fsmInitialized  = false;
@@ -192,10 +137,7 @@ let _lastActiveState = null;
 
 function updateFsmDiagram(snap) {
   const svg = $('fsmSvg');
-  if (!_fsmInitialized) {
-    _buildFsmSvg(svg);
-    _fsmInitialized = true;
-  }
+  if (!_fsmInitialized) { _buildFsmSvg(svg); _fsmInitialized = true; }
   if (_lastActiveState === snap.state) return;
   _lastActiveState = snap.state;
 
@@ -205,11 +147,11 @@ function updateFsmDiagram(snap) {
     const namLbl = svg.querySelector(`#fsm-nam-${n.id}`);
     if (!circle) return;
     const active = n.id === snap.state;
-    circle.setAttribute('fill',         active ? n.color : '#1c2230');
-    circle.setAttribute('stroke',       n.color);
+    circle.setAttribute('fill', active ? n.color : '#1c2230');
+    circle.setAttribute('stroke', n.color);
     circle.setAttribute('stroke-width', active ? '4' : '2');
-    circle.setAttribute('filter',       active ? 'url(#glow)' : '');
-    if (idLbl)  idLbl.setAttribute('fill',  active ? '#fff' : '#c9d1d9');
+    circle.setAttribute('filter', active ? 'url(#glow)' : '');
+    if (idLbl) idLbl.setAttribute('fill', active ? '#fff' : '#c9d1d9');
     if (namLbl) namLbl.setAttribute('fill', active ? '#fff' : '#8b949e');
   });
 }
@@ -217,9 +159,8 @@ function updateFsmDiagram(snap) {
 function _buildFsmSvg(svg) {
   svg.innerHTML = '';
   const NS = 'http://www.w3.org/2000/svg';
-  const R  = 28; // node radius
+  const R  = 28;
 
-  /* ── Defs ── */
   const defs = document.createElementNS(NS, 'defs');
   defs.innerHTML = `
     <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
@@ -229,19 +170,14 @@ function _buildFsmSvg(svg) {
     <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
     </marker>
-    <marker id="arr-hi" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="#8b949e"/>
-    </marker>
   `;
   svg.appendChild(defs);
 
   const nodeMap = {};
   FSM_NODES.forEach(n => { nodeMap[n.id] = n; });
 
-  /* ── Helper: draw a labelled path ── */
-  function addEdge(pathD, label, lx, ly, curved = false) {
+  function addEdge(pathD, label, lx, ly) {
     const g = document.createElementNS(NS, 'g');
-
     const path = document.createElementNS(NS, 'path');
     path.setAttribute('d', pathD);
     path.setAttribute('stroke', '#3d444d');
@@ -249,96 +185,26 @@ function _buildFsmSvg(svg) {
     path.setAttribute('fill', 'none');
     path.setAttribute('marker-end', 'url(#arr)');
     g.appendChild(path);
-
-    if (label) {
-      /* Semi-transparent label background */
-      const bg = document.createElementNS(NS, 'rect');
-      bg.setAttribute('x', lx - 36);
-      bg.setAttribute('y', ly - 9);
-      bg.setAttribute('width', '72');
-      bg.setAttribute('height', '13');
-      bg.setAttribute('rx', '3');
-      bg.setAttribute('fill', 'rgba(13,17,23,0.75)');
-      g.appendChild(bg);
-
-      const txt = document.createElementNS(NS, 'text');
-      txt.setAttribute('x', lx);
-      txt.setAttribute('y', ly);
-      txt.setAttribute('fill', '#6e7681');
-      txt.setAttribute('font-size', '9');
-      txt.setAttribute('font-family', 'Segoe UI, system-ui, sans-serif');
-      txt.setAttribute('text-anchor', 'middle');
-      txt.setAttribute('dominant-baseline', 'middle');
-      txt.textContent = label;
-      g.appendChild(txt);
-    }
-
     svg.appendChild(g);
   }
 
-  /* ── Draw edges first (so nodes render on top) ── */
   FSM_EDGES.forEach(e => {
-    const f = nodeMap[e.from];
-    const t = nodeMap[e.to];
+    const f = nodeMap[e.from], t = nodeMap[e.to];
     if (!f || !t) return;
 
-    switch (e.type) {
-      case 'straight': {
-        // Horizontal arrow between adjacent nodes
-        const x1 = f.x + R, y1 = f.y;
-        const x2 = t.x - R, y2 = t.y;
-        addEdge(`M${x1},${y1} L${x2},${y2}`, e.label,
-                (x1+x2)/2, y1 - 14);
-        break;
-      }
-      case 'loop-back': {
-        // Curved arc going below the row from S3 back to S0
-        const x1 = f.x, y1 = f.y + R;
-        const x2 = t.x, y2 = t.y + R;
-        const mid_y = 215;
-        addEdge(`M${x1},${y1} C${x1},${mid_y} ${x2},${mid_y} ${x2},${y2}`,
-                e.label, (x1+x2)/2, mid_y + 12);
-        break;
-      }
-      case 'branch-down': {
-        // S6 → S4: vertical down
-        const x1 = f.x, y1 = f.y + R;
-        const x2 = t.x, y2 = t.y - R;
-        addEdge(`M${x1},${y1} L${x2},${y2}`, e.label, x1 + 42, (y1+y2)/2);
-        break;
-      }
-      case 'branch-down-ret': {
-        // S4 → S6: offset return line beside the down line
-        const x1 = f.x - 18, y1 = f.y - R;
-        const x2 = t.x - 18, y2 = t.y + R;
-        addEdge(`M${x1},${y1} L${x2},${y2}`, e.label, x1 - 42, (y1+y2)/2);
-        break;
-      }
-      case 'side': {
-        // S3 → S5: horizontal to the right
-        const x1 = f.x + R, y1 = f.y - 14;
-        const x2 = t.x - R, y2 = t.y - 14;
-        addEdge(`M${x1},${y1} Q${(x1+x2)/2},${y1-24} ${x2},${y2}`,
-                e.label, (x1+x2)/2, y1 - 32);
-        break;
-      }
-      case 'side-ret': {
-        // S5 → S6: goes left back to S6
-        const x1 = t.x + R, y1 = t.y;   // S6 right
-        const x2 = f.x - R, y2 = f.y;   // S5 left
-        addEdge(`M${x2},${y2} Q${(x1+x2)/2},${y1+40} ${x1},${y1}`,
-                e.label, (x1+x2)/2, y1 + 52);
-        break;
-      }
+    if (f.y === t.y) {
+      if (f.x < t.x) addEdge(`M${f.x+R},${f.y} L${t.x-R},${t.y}`); // Right
+      else addEdge(`M${f.x-R},${f.y} L${t.x+R},${t.y}`); // Left
+    } else if (f.x === t.x) {
+      if (f.y < t.y) addEdge(`M${f.x},${f.y+R} L${t.x},${t.y-R}`); // Down
+      else addEdge(`M${f.x},${f.y-R} L${t.x},${t.y+R}`); // Up
     }
   });
 
-  /* ── Draw nodes on top ── */
   FSM_NODES.forEach(n => {
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('transform', `translate(${n.x},${n.y})`);
 
-    /* Outer glow ring (always visible, dim when inactive) */
     const ring = document.createElementNS(NS, 'circle');
     ring.setAttribute('r', R + 5);
     ring.setAttribute('fill', 'none');
@@ -347,7 +213,6 @@ function _buildFsmSvg(svg) {
     ring.setAttribute('opacity', '0.25');
     g.appendChild(ring);
 
-    /* Main circle */
     const circle = document.createElementNS(NS, 'circle');
     circle.setAttribute('id', `fsm-node-${n.id}`);
     circle.setAttribute('r', R);
@@ -356,7 +221,6 @@ function _buildFsmSvg(svg) {
     circle.setAttribute('stroke-width', '2');
     g.appendChild(circle);
 
-    /* State ID label (e.g. "S0") */
     const idLbl = document.createElementNS(NS, 'text');
     idLbl.setAttribute('id', `fsm-lbl-${n.id}`);
     idLbl.setAttribute('text-anchor', 'middle');
@@ -369,7 +233,6 @@ function _buildFsmSvg(svg) {
     idLbl.textContent = n.id;
     g.appendChild(idLbl);
 
-    /* State name label (e.g. "Main Green") */
     const namLbl = document.createElementNS(NS, 'text');
     namLbl.setAttribute('id', `fsm-nam-${n.id}`);
     namLbl.setAttribute('text-anchor', 'middle');
@@ -378,44 +241,38 @@ function _buildFsmSvg(svg) {
     namLbl.setAttribute('font-family', 'Segoe UI, system-ui, sans-serif');
     namLbl.setAttribute('fill', '#8b949e');
     namLbl.setAttribute('y', '9');
-    namLbl.textContent = n.name;
+    
+    // Split long names into two lines if needed
+    const parts = n.name.split(' ');
+    if (parts.length > 2) {
+       const l1 = parts.slice(0, 2).join(' ');
+       const l2 = parts.slice(2).join(' ');
+       namLbl.innerHTML = `<tspan x="0" y="8">${l1}</tspan><tspan x="0" y="18">${l2}</tspan>`;
+    } else {
+       namLbl.textContent = n.name;
+    }
+    
     g.appendChild(namLbl);
-
     svg.appendChild(g);
   });
 }
 
-
-/* ═══════════════════════════════════════════════════════════════
-   EVENT LOG
-═══════════════════════════════════════════════════════════════ */
 let _lastLogState = null;
 let _lastLogPed   = false;
 let _lastLogEm    = false;
 
 function maybeLog(snap) {
-  /* Log state changes */
   if (snap.state !== _lastLogState) {
-    const cls = { S5:'em', S4:'info', S1:'warn', S3:'warn', S6:'log' }[snap.state] || 'info';
+    const cls = { S_EM:'em', S6:'info', S14:'info' }[snap.state] || 'log';
     appendLog(`State → ${snap.state}: ${snap.stateName}`, cls);
     _lastLogState = snap.state;
   }
-  /* Log pedestrian */
-  if (snap.pedWalk && !_lastLogPed) {
-    appendLog('🚶 Pedestrian crossing started', 'info');
-  }
-  if (!snap.pedWalk && _lastLogPed && snap.state !== 'S0') {
-    appendLog('🚶 Pedestrian crossing ended', 'info');
-  }
+  if (snap.pedWalk && !_lastLogPed) appendLog('🚶 Pedestrian crossing started', 'info');
+  if (!snap.pedWalk && _lastLogPed && snap.state !== 'S0') appendLog('🚶 Pedestrian crossing ended', 'info');
   _lastLogPed = snap.pedWalk;
 
-  /* Log emergency */
-  if (snap.emActive && !_lastLogEm) {
-    appendLog(`🚨 Emergency: ${snap.emVehicle} on ${snap.emDirection} road`, 'em');
-  }
-  if (!snap.emActive && _lastLogEm) {
-    appendLog('✔ Emergency cleared – resuming normal cycle', 'info');
-  }
+  if (snap.emActive && !_lastLogEm) appendLog(`🚨 Emergency: ${snap.emVehicle} on ${snap.emDirection} road`, 'em');
+  if (!snap.emActive && _lastLogEm) appendLog('✔ Emergency cleared – resuming normal cycle', 'info');
   _lastLogEm = snap.emActive;
 }
 
@@ -424,14 +281,11 @@ function appendLog(msg, cls = '') {
   const time = new Date().toLocaleTimeString('en-US', { hour12:false });
   const entry = document.createElement('div');
   entry.className = 'log-entry';
-  entry.innerHTML =
-    `<span class="log-time">${time}</span><span class="log-msg ${cls}">${msg}</span>`;
+  entry.innerHTML = `<span class="log-time">${time}</span><span class="log-msg ${cls}">${msg}</span>`;
   log.prepend(entry);
-  /* Keep max 60 entries */
   while (log.children.length > 60) log.removeChild(log.lastChild);
 }
 
-/* Wire logging into FSM tick */
 const _origTick = onFsmTick;
 function wrappedTick(snap) {
   _origTick(snap);
@@ -439,9 +293,6 @@ function wrappedTick(snap) {
 }
 fsm.onTick = wrappedTick;
 
-/* ═══════════════════════════════════════════════════════════════
-   REAL-TIME CLOCK
-═══════════════════════════════════════════════════════════════ */
 function updateClock() {
   const now = new Date();
   $('clockBox').textContent = now.toLocaleTimeString('en-US', { hour12:false });
@@ -449,11 +300,6 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-/* ═══════════════════════════════════════════════════════════════
-   BUTTON WIRING
-═══════════════════════════════════════════════════════════════ */
-
-/* ── Start ── */
 $('btnStart').addEventListener('click', () => {
   fsm.start();
   appendLog('▶ Simulation started', 'info');
@@ -462,7 +308,6 @@ $('btnStart').addEventListener('click', () => {
   $('btnResume').disabled = true;
 });
 
-/* ── Pause ── */
 $('btnPause').addEventListener('click', () => {
   fsm.pause();
   appendLog('⏸ Simulation paused', 'warn');
@@ -470,7 +315,6 @@ $('btnPause').addEventListener('click', () => {
   $('btnResume').disabled = false;
 });
 
-/* ── Resume ── */
 $('btnResume').addEventListener('click', () => {
   fsm.resume();
   appendLog('▷ Simulation resumed', 'info');
@@ -478,7 +322,6 @@ $('btnResume').addEventListener('click', () => {
   $('btnPause').disabled  = false;
 });
 
-/* ── Reset ── */
 $('btnReset').addEventListener('click', () => {
   fsm.reset();
   appendLog('↺ Simulation reset', 'warn');
@@ -490,11 +333,9 @@ $('btnReset').addEventListener('click', () => {
   _lastLogEm    = false;
   _lastHistoryLen = 0;
   _lastActiveState = null;
-  /* Re-draw idle canvas */
   renderer.update(fsm.snapshot());
 });
 
-/* ── Mode Toggle ── */
 $('modeToggle').addEventListener('change', e => {
   const manual = e.target.checked;
   fsm.setManualMode(manual);
@@ -503,13 +344,11 @@ $('modeToggle').addEventListener('change', e => {
   appendLog(`Mode: ${manual ? 'Manual' : 'Auto'}`, 'warn');
 });
 
-/* ── Manual Next ── */
 $('btnManualNext').addEventListener('click', () => {
   fsm.manualNext();
   appendLog('⏭ Manual: advance state', 'warn');
 });
 
-/* ── Speed Buttons ── */
 $$('.speed-btn').forEach(btn => {
   btn.addEventListener('click', function () {
     $$('.speed-btn').forEach(b => b.classList.remove('active'));
@@ -520,24 +359,8 @@ $$('.speed-btn').forEach(btn => {
   });
 });
 
-/* ── Pedestrian Request ── */
-$('btnPedRequest').addEventListener('click', () => {
-  if (!fsm._running) {
-    appendLog('⚠ Start the simulation first', 'warn');
-    return;
-  }
-  fsm.requestPedestrian();
-  appendLog('🚶 Pedestrian crossing requested', 'info');
-  $('pedStatus').textContent  = '⏳ Request queued...';
-  $('pedStatus').style.color  = '#d29922';
-});
-
-/* ── Emergency Trigger ── */
 $('btnTriggerEM').addEventListener('click', () => {
-  if (!fsm._running) {
-    appendLog('⚠ Start the simulation first', 'warn');
-    return;
-  }
+  if (!fsm._running) { appendLog('⚠ Start the simulation first', 'warn'); return; }
   const vehicle   = document.querySelector('input[name="emVehicle"]:checked')?.value ?? 'Ambulance';
   const direction = $('emDirection').value;
   fsm.triggerEmergency(vehicle, direction);
@@ -546,7 +369,6 @@ $('btnTriggerEM').addEventListener('click', () => {
   $('btnClearEM').disabled   = false;
 });
 
-/* ── Emergency Clear ── */
 $('btnClearEM').addEventListener('click', () => {
   fsm.clearEmergency();
   appendLog('✔ Emergency cleared by operator', 'info');
@@ -554,7 +376,6 @@ $('btnClearEM').addEventListener('click', () => {
   $('btnClearEM').disabled   = true;
 });
 
-/* ── Apply Timers ── */
 $('btnApplyTimers').addEventListener('click', () => {
   const cfg = {
     green:      parseInt($('cfgGreen').value,  10) || 10,
@@ -567,9 +388,6 @@ $('btnApplyTimers').addEventListener('click', () => {
   appendLog(`⏱ Timers updated: G=${cfg.green}s Y=${cfg.yellow}s R=${cfg.allRed}s P=${cfg.pedestrian}s EM=${cfg.emergency}s`, 'info');
 });
 
-/* ═══════════════════════════════════════════════════════════════
-   INITIAL RENDER (idle state)
-═══════════════════════════════════════════════════════════════ */
 renderer.update(fsm.snapshot());
 appendLog('🚦 Smart Traffic Light Controller ready', 'info');
 appendLog('Press ▶ Start to begin the simulation', '');

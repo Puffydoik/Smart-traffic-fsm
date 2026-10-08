@@ -75,15 +75,6 @@
       <button class="btn btn-purple hidden" id="btnManualNext">⏭ Next State</button>
     </section>
 
-    <!-- Pedestrian Request -->
-    <section class="card" id="pedCard">
-      <h2 class="card-title">🚶 Pedestrian Crossing</h2>
-      <button class="btn btn-teal full-width" id="btnPedRequest">
-        🔔 Request Pedestrian Crossing
-      </button>
-      <div class="ped-status" id="pedStatus">No request pending</div>
-    </section>
-
     <!-- Emergency Control -->
     <section class="card" id="emergencyCard">
       <h2 class="card-title">🚨 Emergency Control</h2>
@@ -100,8 +91,8 @@
       <div class="em-direction-selector">
         <label>Direction:</label>
         <select id="emDirection">
-          <option value="main">Main Road</option>
-          <option value="side">Side Road</option>
+          <option value="main">North/South</option>
+          <option value="side">East/West</option>
         </select>
       </div>
 
@@ -145,12 +136,20 @@
         <span class="status-value countdown" id="phaseCountdown">—</span>
       </div>
       <div class="status-item">
-        <span class="status-label">Main Road</span>
-        <span class="status-value" id="mainRoadSignal">—</span>
+        <span class="status-label">N/S S/R</span>
+        <span class="status-value" id="nsSRSignal">—</span>
       </div>
       <div class="status-item">
-        <span class="status-label">Side Road</span>
-        <span class="status-value" id="sideRoadSignal">—</span>
+        <span class="status-label">N/S Left</span>
+        <span class="status-value" id="nsLSignal">—</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">E/W S/R</span>
+        <span class="status-value" id="ewSRSignal">—</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">E/W Left</span>
+        <span class="status-value" id="ewLSignal">—</span>
       </div>
       <div class="status-item">
         <span class="status-label">Pedestrian</span>
@@ -218,13 +217,13 @@
     </div>
     <!-- Legend row -->
     <div class="fsm-legend">
-      <span class="fsm-leg-item"><span class="leg-dot" style="background:#3fb950"></span>S0 Main Green</span>
-      <span class="fsm-leg-item"><span class="leg-dot" style="background:#d29922"></span>S1 Main Yellow</span>
-      <span class="fsm-leg-item"><span class="leg-dot" style="background:#6e7681"></span>S6 All-Red Clear</span>
-      <span class="fsm-leg-item"><span class="leg-dot" style="background:#58a6ff"></span>S2 Side Green</span>
-      <span class="fsm-leg-item"><span class="leg-dot" style="background:#e3731a"></span>S3 Side Yellow</span>
-      <span class="fsm-leg-item"><span class="leg-dot" style="background:#2dd4bf"></span>S4 Pedestrian</span>
-      <span class="fsm-leg-item"><span class="leg-dot" style="background:#f85149"></span>S5 Emergency</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#3fb950"></span>Straight/Right Green</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#d29922"></span>Straight/Right Yellow</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#58a6ff"></span>Left Turn Green</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#e3731a"></span>Left Turn Yellow</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#6e7681"></span>All-Red Clearance</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#2dd4bf"></span>Pedestrian Crossing</span>
+      <span class="fsm-leg-item"><span class="leg-dot" style="background:#f85149"></span>Emergency</span>
     </div>
   </div>
 </section>
